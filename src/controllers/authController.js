@@ -67,11 +67,7 @@ async function register(req, res, next) {
              SET driver_id=$6,route_name=$7,fare=$8,status='idle',is_active=TRUE,updated_at=NOW()`,
           [uuidv4(), code, vType, plateNumber, capacity, driverId, routeName, vFare]
         );
-        logger.info("Auto-created vehicle " + code + " for driver " + phone);
       }
-      logger.info("New driver registered: " + phone);
-    } else {
-      logger.info("New commuter registered: " + phone);
     }
 
     res.status(201).json({
@@ -101,7 +97,6 @@ async function login(req, res, next) {
     const { access, refresh } = generateTokens(user.id);
     await query("UPDATE users SET refresh_token = $1 WHERE id = $2", [refresh, user.id]);
 
-    logger.info("User logged in: " + phone);
     res.json({
       message: "Akwaaba!",
       user: { id: user.id, phone: user.phone, name: user.name, role: user.role },
