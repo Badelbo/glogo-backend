@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: glogo-backend
+    env: node
+    region: oregon
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: glogo-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: glogo-redis
+          type: redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://glogo.vercel.app
+      - key: PAYMENT_MODE
+        value: sandbox
+
+databases:
+  - name: glogo-db
+    databaseName: glogo_db
+    user: glogo_user
+    region: oregon
+    plan: free
+
+services:
+  - type: redis
+    name: glogo-redis
+    region: oregon
+    plan: free
+    maxmemoryPolicy: allkeys-lru
