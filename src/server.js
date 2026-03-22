@@ -30,6 +30,10 @@ const allowedOrigins = [
   process.env.FRONTEND_URL || "http://localhost:3000",
   "http://localhost:3000",
   "http://localhost:3001",
+  "https://www.glogogh.com",
+  "https://glogogh.com",
+  "https://glogo-frontend.vercel.app",
+  "https://glogo-frontend-git-main-badelbos-projects.vercel.app",
 ];
 
 const io = new Server(server, {
