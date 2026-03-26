@@ -63,19 +63,16 @@ const corsOptions = {
 
 // ─── Socket.IO Setup ─────────────────────────────────────
 const io = new Server(server, {
-  cors: {
-    origin: function(origin, callback) { callback(null, true); },
-    methods: ["GET","POST"],
-    credentials: true,
-  }
+  cors: { origin: "*", methods: ["GET","POST"] }
+});
 });
 socketHandler(io);
 app.set("io", io);
 
 // ─── Security & Middleware ────────────────────────────────
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // handle preflight
+app.use(cors({ origin: "*", credentials: false }));
+app.options("*", cors({ origin: "*" })); // handle preflight
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("combined", { stream: { write: msg => logger.http(msg.trim()) } }));
