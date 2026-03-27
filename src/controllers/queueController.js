@@ -206,45 +206,22 @@ async function markBoarded(req, res, next) {
       [entryId]
     );
 
-    // ── TRIGGER PAYMENT ON BOARDING ──────────────────────────
-    // Only collect payment if not already paid
-    if (entry.payment_status !== "paid") {
-      const paymentId = uuidv4();
-      const amount    = parseFloat(entry.fare);
-
-      // Create payment record — sandbox auto-success
-      await client.query(
-        `INSERT INTO payments
-           (id,user_id,queue_entry_id,amount,currency,method,status,
-            phone_number,description,provider_ref)
-         VALUES ($1,$2,$3,$4,'GHS','auto_boarding','success',$5,$6,$7)`,
-        [
-          paymentId,
-          entry.user_id,
-          entryId,
-          amount,
-          entry.commuter_phone,
-          `Fare for ${entry.vehicle_code} — ${entry.route_name}`,
-          `BOARDING-${entryId.slice(0,8).toUpperCase()}`,
-        ]
-      );
-
-      // Mark queue entry as paid
-      await client.query(
-        "UPDATE queue_entries SET payment_status='paid' WHERE id=$1",
-        [entryId]
-      );
-
-      logger.info(`Payment collected on boarding: GHS ${amount} from ${entry.commuter_name} for ${entry.vehicle_code}`);
-    }
+    // ── BOARDING CONFIRMED ───────────────────────────────────
+    // Glogo does not collect payment — driver collects directly via MoMo
+    // Just mark as boarded and notify the commuter
+    await client.query(
+      "UPDATE queue_entries SET payment_status='boarded' WHERE id=$1",
+      [entryId]
+    );
+    logger.info(`Boarding confirmed: ${entry.commuter_name} boarded ${entry.vehicle_code}`);
 
     await client.query("COMMIT");
 
     // Notify commuter
     await notifService.sendToUser(entry.user_id, {
-      type:  "payment_success",
-      title: "Boarded & Paid ✅",
-      body:  `GHS ${parseFloat(entry.fare).toFixed(2)} collected for ${entry.route_name}. Safe journey!`,
+      type:  "trip_update",
+      title: "You are on board! 🚌",
+      body:  `Your boarding is confirmed for ${entry.route_name}. Pay your driver GHS ${parseFloat(entry.fare).toFixed(2)} via MoMo. Safe journey!`,
       data:  { entryId }
     });
 
@@ -254,7 +231,7 @@ async function markBoarded(req, res, next) {
     io.to(`vehicle:${entry.vehicle_id}`).emit("queue:updated", { vehicleId: entry.vehicle_id });
 
     res.json({
-      message: `${entry.commuter_name} confirmed boarding. GHS ${parseFloat(entry.fare).toFixed(2)} collected.`,
+      message: `${entry.commuter_name} confirmed boarding. Remind them to pay GHS ${parseFloat(entry.fare).toFixed(2)} via MoMo.`,
       entry:   { id: entryId, commuter: entry.commuter_name, fare: entry.fare }
     });
   } catch(err) {
